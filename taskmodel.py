@@ -112,7 +112,7 @@ class TaskModel(QAbstractTableModel):
     def setData(self, index, value, role):
         return True
 
-    def data(self, index: QModelIndex, role=None) -> QVariant:
+    def data(self, index: QModelIndex, role=None):
         if not index.isValid():
             return QVariant()
 
@@ -183,8 +183,6 @@ class TaskModel(QAbstractTableModel):
                     return QVariant(QBrush(QColor(const.COLOR_DEADLINE_MEDIUM)))
                 elif days > 7:
                     return QVariant(QBrush(QColor(const.COLOR_DEADLINE_LOW)))
-                # print(days)
-                # if item.item_dateEnd - datetime.date.today() ==
 
         #     retcolor = Qt.white;
         #
@@ -212,10 +210,35 @@ class TaskModel(QAbstractTableModel):
         #     return QVariant(QBrush(QColor(retcolor)))
 
         elif role == const.RoleNodeId:
-            return QVariant(item.item_id)
+            return item.item_id
 
-        # elif role == const.RoleClient:
-        #     return QVariant(item.item_clientRef)
+        elif role == const.RoleUser:
+            return item.item_userId
+
+        elif role == const.RoleInit:
+            return item.item_initiatorId
+
+        elif role == const.RoleProject:
+            return item.item_projectId
+
+        elif role == const.RoleDateBegin:
+            return item.item_dateBegin
+
+        elif role == const.RoleDateEnd:
+            return item.item_dateEnd
+
+        elif role == const.RoleActive:
+            return item.item_active
+
+        elif role == const.RoleStrict:
+            return item.item_strict
+
+        elif role == const.RolePercent:
+            return item.item_percent
+
+        elif role == const.RoleFilterData:
+            return item.item_id, item.item_userId, item.item_initiatorId, item.item_projectId, item.item_dateBegin, \
+                   item.item_dateEnd, item.item_active, item.item_strict, item.item_percent
 
         return QVariant()
 

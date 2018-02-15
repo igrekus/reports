@@ -19,6 +19,8 @@ class DomainModel(QObject):
 
         self._persistenceFacade = persistenceFacade
 
+        self.loggedUser = 0
+
         self.taskList = list()
         self.dicts = dict()
 
@@ -33,7 +35,7 @@ class DomainModel(QObject):
 
     def initModel(self):
         print("init domain model")
-        self.taskList = self._persistenceFacade.getTaskList(userId=0)
+        self.taskList = self._persistenceFacade.getTaskList(userId=self.loggedUser)
 
         # FIXME: make uniform dict
         for name in self.dictNameList:

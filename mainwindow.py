@@ -1,7 +1,9 @@
+import datetime
+
 from PyQt5 import uic
 from PyQt5.QtGui import QResizeEvent
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, QTableView, qApp
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QEvent
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QEvent, QDate
 
 import const
 # from contractsearchproxymodel import ContractSearchProxyModel
@@ -10,8 +12,11 @@ from mysqlengine import MysqlEngine
 from persistencefacade import PersistenceFacade
 from taskitem import TaskItem
 from taskmodel import TaskModel
+from tasksearchproxymodel import TaskSearchProxyModel
 from uifacade import UiFacade
 
+# TODO: search controls text, dateEnd, initiator, show active, datebegin, user, strictdeadline, project,
+# important, priority, percent
 
 class MainWindow(QMainWindow):
 
@@ -50,7 +55,8 @@ class MainWindow(QMainWindow):
 
         # task table + search proxy
         self._modelTaskTable = TaskModel(parent=self, domainModel=self._modelDomain)
-        self._modelSearchProxy = QSortFilterProxyModel(parent=self)
+        self._modelSearchProxy = TaskSearchProxyModel(parent=self)
+        # self._modelSearchProxy = QSortFilterProxyModel(parent=self)
         self._modelSearchProxy.setSourceModel(self._modelTaskTable)
 
         # connect ui facade to models
@@ -58,10 +64,9 @@ class MainWindow(QMainWindow):
 
         # actions
         self.actRefresh = QAction("Обновить", self)
-        self.actContractAdd = QAction("Добавить поставку", self)
-        self.actContractEdit = QAction("Изменить поставку", self)
-        self.actContractDelete = QAction("Удалить поставку", self)
-        self.actCatalogOpen = QAction("Открыть каталог приборов", self)
+        self.actTaskAdd = QAction("Добавить поставку", self)
+        self.actTaskEdit = QAction("Изменить поставку", self)
+        self.actTaskDelete = QAction("Удалить поставку", self)
 
         # try:
         qApp.installEventFilter(self)
@@ -92,13 +97,9 @@ class MainWindow(QMainWindow):
         # create actions
         self.initActions()
 
-        # # setup ui widget signals
-        # # buttons
-        # self.ui.btnContractAdd.clicked.connect(self.onBtnContractAddClicked)
-        # self.ui.btnContractEdit.clicked.connect(self.onBtnContractEditClicked)
-        # self.ui.btnContractDelete.clicked.connect(self.onBtnContractDeleteClicked)
-        # self.ui.btnCatalogOpen.clicked.connect(self.onBtnCatalogOpenClicked)
-        #
+        # setup ui widget signals
+        self.createSignals()
+
         # # tree and selection
         # # self.ui.treeDeviceList.selectionModel().currentChanged.connect(self.onCurrentTreeItemChanged)
         # self.ui.treeContract.doubleClicked.connect(self.onTreeContractDoubleClicked)
@@ -106,27 +107,71 @@ class MainWindow(QMainWindow):
         # # search widgets
         # self.ui.comboClientFilter.currentIndexChanged.connect(self.setSearchFilter)
         # self.ui.editSearchFilter.textChanged.connect(self.setSearchFilter)
+        # self.setSearchFilter()
 
         # UI modifications
-        # self.ui.btnDictEditor.setVisible(False)
-        # self.setSearchFilter()
+        self.initUiWidgets()
+
+    def createSignals(self):
+        # edit buttons
+        self.ui.btnTaskAdd.clicked.connect(self.onBtnTaskAddClicked)
+        self.ui.btnTaskEdit.clicked.connect(self.onBtnTaskEditClicked)
+        self.ui.btnTaskDelete.clicked.connect(self.onBtnTaskDeleteClicked)
+
+        # search widgets
+        # date checkboxes
+        self.ui.chkDateBeginFrom.toggled.connect(self.onChkDateBeginFromToggled)
+        self.ui.chkDateBeginTo.toggled.connect(self.onChkDateBeginToToggled)
+        self.ui.chkDateEndFrom.toggled.connect(self.onChkDateEndFromToggled)
+        self.ui.chkDateEndTo.toggled.connect(self.onChkDateEndToToggled)
+
+        # date edits
+        self.ui.dateBeginFrom.dateChanged.connect(self.onDateBeginFromChanged)
+        self.ui.dateBeginTo.dateChanged.connect(self.onDateBeginToChanged)
+        self.ui.dateEndFrom.dateChanged.connect(self.onDateEndFromChanged)
+        self.ui.dateEndTo.dateChanged.connect(self.onDateEndToChanged)
+
+        # comboboxes
+        self.ui.comboUser.currentIndexChanged.connect(self.onComboUserCurrentIndexChanged)
+        self.ui.comboInit.currentIndexChanged.connect(self.onComboInitCurrentIndexChanged)
+        self.ui.comboProject.currentIndexChanged.connect(self.onComboProjectCurrentIndexChanged)
+
+        # additional checkboxes
+        self.ui.chkActive.toggled.connect(self.onChkActiveToggled)
+        self.ui.chkNotActive.toggled.connect(self.onChkNotActiveToggled)
+        self.ui.chkStrict.toggled.connect(self.onChkStrictToggled)
+        self.ui.chkHundredPercent.toggled.connect(self.onChkHundredPercentToggled)
 
     def initActions(self):
         self.actRefresh.setShortcut("Ctrl+R")
         self.actRefresh.setStatusTip("Обновить данные")
         self.actRefresh.triggered.connect(self.procActRefresh)
 
-        self.actContractAdd.setStatusTip("Добавить поставку")
-        self.actContractAdd.triggered.connect(self.procActContractAdd)
+        self.actTaskAdd.setStatusTip("Добавить поставку")
+        self.actTaskAdd.triggered.connect(self.procActTaskAdd)
 
-        self.actContractEdit.setStatusTip("Изменить поставку")
-        self.actContractEdit.triggered.connect(self.procActContractEdit)
+        self.actTaskEdit.setStatusTip("Изменить поставку")
+        self.actTaskEdit.triggered.connect(self.procActTaskEdit)
 
-        self.actContractDelete.setStatusTip("Удалить поставку")
-        self.actContractDelete.triggered.connect(self.procActContractDelete)
+        self.actTaskDelete.setStatusTip("Удалить поставку")
+        self.actTaskDelete.triggered.connect(self.procActTaskDelete)
 
-        self.actCatalogOpen.setStatusTip("Открыть каталог приборов")
-        self.actCatalogOpen.triggered.connect(self.procActCatalogOpen)
+    def initUiWidgets(self):
+        self.ui.grpSearchFilters.setVisible(False)
+
+        self.ui.btnSearchFilters.setLayoutDirection(Qt.RightToLeft)
+
+        self.ui.chkDateBeginFrom.setLayoutDirection(Qt.RightToLeft)
+        self.ui.chkDateBeginTo.setLayoutDirection(Qt.RightToLeft)
+        self.ui.chkDateEndFrom.setLayoutDirection(Qt.RightToLeft)
+        self.ui.chkDateEndTo.setLayoutDirection(Qt.RightToLeft)
+
+        self.ui.dateBeginFrom.setDate(QDate().currentDate())
+        self.ui.dateBeginTo.setDate(QDate().currentDate())
+        self.ui.dateEndFrom.setDate(QDate().currentDate())
+        self.ui.dateEndTo.setDate(QDate().currentDate())
+
+        self.setSearchFilter()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonRelease:
@@ -151,33 +196,90 @@ class MainWindow(QMainWindow):
         self.ui.tableTask.setColumnWidth(10, tdwidth * 0.02)
         self.ui.tableTask.setColumnWidth(11, tdwidth * 0.03)
 
-    # ui events
-    def onBtnContractAddClicked(self):
-        self.actContractAdd.trigger()
+    def setSearchFilter(self):
+        # TODO bind to comboboxes
+        self._modelSearchProxy.filterUser = 0
+        self._modelSearchProxy.filterInit = 0
+        self._modelSearchProxy.filterProject = 0
 
-    def onBtnContractEditClicked(self):
-        self.actContractEdit.trigger()
+        self._modelSearchProxy.filterDateBeginFrom = datetime.datetime.strptime(self.ui.dateBeginFrom.date().toString(
+            Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateBeginFrom.isChecked() else None
+        self._modelSearchProxy.filterDateBeginTo = datetime.datetime.strptime(self.ui.dateBeginTo.date().toString(
+            Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateBeginTo.isChecked() else None
+        self._modelSearchProxy.filterDateEndFrom = datetime.datetime.strptime(self.ui.dateEndFrom.date().toString(
+            Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateEndFrom.isChecked() else None
+        self._modelSearchProxy.filterDateEndTo = datetime.datetime.strptime(self.ui.dateEndTo.date().toString(
+            Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateEndTo.isChecked() else None
 
-    def onBtnContractDeleteClicked(self):
-        self.actContractDelete.trigger()
-
-    def onBtnCatalogOpenClicked(self):
-        self.actCatalogOpen.trigger()
-
-    # def onCurrentTreeItemChanged(self, cur: QModelIndex, prev: QModelIndex):
-    #     sourceIndex = self._modelSearchProxy.mapToSource(cur)
-    #     self.updateItemInfo(sourceIndex)
-
-    def onTreeContractDoubleClicked(self, index):
-        # if index.column() != 0:
-        self.actContractEdit.trigger()
-
-    def setSearchFilter(self, dummy=0):
+        self._modelSearchProxy.filterActive = self.ui.chkActive.isChecked()
+        self._modelSearchProxy.filterNotActive = self.ui.chkActive.isChecked()
+        self._modelSearchProxy.filterStrictDate = self.ui.chkStrict.isChecked()
+        self._modelSearchProxy.filterHundredPercent = self.ui.chkHundredPercent.isChecked()
         self._modelSearchProxy.filterString = self.ui.editSearchFilter.text()
-        self._modelSearchProxy.filterClient = self.ui.comboClientFilter.currentData(const.RoleNodeId)
 
         self._modelSearchProxy.invalidate()
         # self.ui.treeDeviceList.setColumnHidden(5, True)
+
+    # ui events
+    def onBtnTaskAddClicked(self):
+        self.actTaskAdd.trigger()
+
+    def onBtnTaskEditClicked(self):
+        self.actTaskEdit.trigger()
+
+    def onBtnTaskDeleteClicked(self):
+        self.actTaskDelete.trigger()
+
+    def onChkDateBeginFromToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkDateBeginToToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkDateEndFromToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkDateEndToToggled(self, checked):
+        self.setSearchFilter()
+
+    def onDateBeginFromChanged(self, date):
+        self.setSearchFilter()
+
+    def onDateBeginToChanged(self, date):
+        self.setSearchFilter()
+
+    def onDateEndFromChanged(self, date):
+        self.setSearchFilter()
+
+    def onDateEndToChanged(self, date):
+        self.setSearchFilter()
+
+    def onComboUserCurrentIndexChanged(self, index):
+        self.setSearchFilter()
+
+    def onComboInitCurrentIndexChanged(self, index):
+        self.setSearchFilter()
+
+    def onComboProjectCurrentIndexChanged(self, index):
+        self.setSearchFilter()
+
+    def onChkActiveToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkNotActiveToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkStrictToggled(self, checked):
+        self.setSearchFilter()
+
+    def onChkHundredPercentToggled(self, checked):
+        self.setSearchFilter()
+
+
+
+    def onTreeContractDoubleClicked(self, index):
+        # if index.column() != 0:
+        self.actTaskEdit.trigger()
 
     # misc events
     def resizeEvent(self, event: QResizeEvent):
@@ -195,24 +297,25 @@ class MainWindow(QMainWindow):
         # self._uiFacade.requestRefresh()
         self.refreshView()
 
-    def procActContractAdd(self):
-        self._uiFacade.requestContractAdd()
+    def procActTaskAdd(self):
+        print("task add")
+        # self._uiFacade.requestContractAdd()
 
-    def procActContractEdit(self):
-        if not self.ui.treeContract.selectionModel().hasSelection():
-            QMessageBox.information(self, "Ошибка!", "Выберите запись о контракте для редактирования.")
-            return False
+    def procActTaskEdit(self):
+        print("task edit")
+        # if not self.ui.treeContract.selectionModel().hasSelection():
+        #     QMessageBox.information(self, "Ошибка!", "Выберите запись о контракте для редактирования.")
+        #     return False
+        #
+        # selectedIndex = self.ui.treeContract.selectionModel().selectedIndexes()[0]
+        # self._uiFacade.requestContractEdit(self._modelSearchProxy.mapToSource(selectedIndex))
 
-        selectedIndex = self.ui.treeContract.selectionModel().selectedIndexes()[0]
-        self._uiFacade.requestContractEdit(self._modelSearchProxy.mapToSource(selectedIndex))
+    def procActTaskDelete(self):
+        print("task delete")
+        # if not self.ui.treeContract.selectionModel().hasSelection():
+        #     QMessageBox.information(self, "Ошибка!", "Выберите запись о контракте для удаления.")
+        #     return False
+        #
+        # selectedIndex = self.ui.treeContract.selectionModel().selectedIndexes()[0]
+        # self._uiFacade.requestContractDelete(self._modelSearchProxy.mapToSource(selectedIndex))
 
-    def procActContractDelete(self):
-        if not self.ui.treeContract.selectionModel().hasSelection():
-            QMessageBox.information(self, "Ошибка!", "Выберите запись о контракте для удаления.")
-            return False
-
-        selectedIndex = self.ui.treeContract.selectionModel().selectedIndexes()[0]
-        self._uiFacade.requestContractDelete(self._modelSearchProxy.mapToSource(selectedIndex))
-
-    def procActCatalogOpen(self):
-        self._uiFacade.requestCatalogOpen()

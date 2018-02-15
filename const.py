@@ -18,5 +18,12 @@ COLOR_PERCENT_100 = 0xffF5F6D1
 COLOR_STRICT_DATE = 0xffFF7B00
 
 RoleNodeId = Qt.UserRole + 1
-RoleClient = RoleNodeId + 1
-RoleProduct = RoleClient + 1
+RoleUser = RoleNodeId + 1
+RoleInit = RoleUser + 1
+RoleProject = RoleInit + 1
+RoleDateBegin = RoleProject + 1
+RoleDateEnd = RoleDateBegin+ 1
+RoleActive = RoleDateEnd + 1
+RoleStrict = RoleActive + 1
+RolePercent = RoleStrict + 1
+RoleFilterData = RolePercent + 1
