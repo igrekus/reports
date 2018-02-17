@@ -61,24 +61,38 @@ class TaskSearchProxyModel(QSortFilterProxyModel):
         # self.filterStrictDate = False
         # self.filterHundredPercent = False
 
-        # if self.filterUser != 0 and self.filterUser != item_userId:
-        #     return False
-        if self.filterUser == 0 or self.filterUser == item_userId:
-            if self.filterInit == 0 or self.filterInit == item_initiatorId:
-                if self.filterProject == 0 or self.filterProject == item_projectId:
-                    if self.filterDateBeginFrom is None or self.filterDateBeginFrom <= item_dateBegin:
-                        if self.filterDateBeginTo is None or self.filterDateBeginTo >= item_dateBegin:
-                            if self.filterDateEndFrom is None or self.filterDateEndFrom <= item_dateEnd:
-                                if self.filterDateEndTo is None or self.filterDateEndTo >= item_dateEnd:
-                                    if not self.filterStrictDate or self.filterStrictDate == item_strict:
-                                        if not self.filterHundredPercent or 100 == item_percent:
-                                            return True
+        if self.filterUser != 0 and self.filterUser != item_userId:
+            return False
+
+        if self.filterInit != 0 and self.filterInit != item_initiatorId:
+            return False
+
+        if self.filterProject != 0 and self.filterProject != item_projectId:
+            return False
+
+        if self.filterDateBeginFrom is not None and self.filterDateBeginFrom > item_dateBegin:
+            return False
+
+        if self.filterDateBeginTo is not None and self.filterDateBeginTo < item_dateBegin:
+            return False
+
+        if self.filterDateEndFrom is not None and self.filterDateEndFrom > item_dateEnd:
+            return False
+
+        if self.filterDateEndTo is not None and self.filterDateEndTo < item_dateEnd:
+            return False
+
+        if self.filterStrictDate and not item_strict:
+            return False
+
+        # if self.filterHundredPercent or 100 == item_percent:
+        #     return True
         # if self.filterClient == 0 or self.filterClient == client:
         #     for i in range(self.sourceModel().columnCount()):
         #         string = str(self.sourceModel().index(row, i, parent_index).data(Qt.DisplayRole))
         #         if self._filterRegex.findall(string):
         #             return True
-        return False
+        return True
 
 
     def filterAcceptsRow(self, source_row, source_parent_index):
