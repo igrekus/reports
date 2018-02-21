@@ -57,7 +57,7 @@ class TaskModel(QAbstractTableModel):
     ColumnCount = ColumnPriority + 1
 
     _headers = ["№", "Тема", "Инициатор", "Формулировка", "Исполнитель", "%", "Начало", "Изменение", "Срок",
-                "Сложность", "Актуальность", "Приоритет"]
+                "Сложность", "Акт.", "Приоритет"]
 
     def __init__(self, parent=None, domainModel=None):
         super(TaskModel, self).__init__(parent)

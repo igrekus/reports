@@ -1,4 +1,5 @@
 import const
+from chekablemapmodel import CheckableMapModel
 from taskitem import TaskItem
 from mapmodel import MapModel
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -30,8 +31,12 @@ class DomainModel(QObject):
                              const.DICT_USER]
 
     def buildMapModel(self, name: str):
-        self.dicts[name] = MapModel(self, self._persistenceFacade.getDict(name))
+        # self.dicts[name] = MapModel(self, self._persistenceFacade.getDict(name))
+        self.dicts[name] = CheckableMapModel(self, self._persistenceFacade.getDict(name))
         self.dicts[name].addItemAtPosition(0, 0, "Все")
+
+    def mapmodelslot(self, data):
+        print("mapmodel")
 
     def initModel(self):
         print("init domain model")

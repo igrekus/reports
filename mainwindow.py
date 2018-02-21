@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QSortFilterProxyModel, QEvent, QDate
 
 import const
 # from contractsearchproxymodel import ContractSearchProxyModel
+from checkablecombo import CheckableComboBox
 from domainmodel import DomainModel
 from mysqlengine import MysqlEngine
 from persistencefacade import PersistenceFacade
@@ -56,7 +57,6 @@ class MainWindow(QMainWindow):
         # task table + search proxy
         self._modelTaskTable = TaskModel(parent=self, domainModel=self._modelDomain)
         self._modelSearchProxy = TaskSearchProxyModel(parent=self)
-        # self._modelSearchProxy = QSortFilterProxyModel(parent=self)
         self._modelSearchProxy.setSourceModel(self._modelTaskTable)
 
         # connect ui facade to models
@@ -91,8 +91,22 @@ class MainWindow(QMainWindow):
         self.ui.tableTask: QTableView
         self.ui.tableTask.setModel(self._modelSearchProxy)
 
-        # # setup filter widgets
-        # self.ui.comboClientFilter.setModel(self._modelDomain.dicts[const.DICT_CLIENT])
+        # setup search filter widgets
+        self.ui.comboUser.setHidden(True)
+        self.ui.comboUser = CheckableComboBox(parent=self.ui.grpSearchFilters)
+        self.ui.hlayUser.addWidget(self.ui.comboUser)
+
+        self.ui.comboInit.setHidden(True)
+        self.ui.comboInit = CheckableComboBox(parent=self.ui.grpSearchFilters)
+        self.ui.hlayInit.addWidget(self.ui.comboInit)
+
+        self.ui.comboProject.setHidden(True)
+        self.ui.comboProject = CheckableComboBox(parent=self.ui.grpSearchFilters)
+        self.ui.hlayProject.addWidget(self.ui.comboProject)
+
+        self.ui.comboUser.setModel(self._modelDomain.dicts[const.DICT_USER])
+        self.ui.comboInit.setModel(self._modelDomain.dicts[const.DICT_INITIATOR])
+        self.ui.comboProject.setModel(self._modelDomain.dicts[const.DICT_PROJECT])
 
         # create actions
         self.initActions()
@@ -119,6 +133,9 @@ class MainWindow(QMainWindow):
         self.ui.btnTaskDelete.clicked.connect(self.onBtnTaskDeleteClicked)
 
         # search widgets
+        # search edit
+        self.ui.editSearchFilter.textChanged.connect(self.onEditSearchFilterTextChanged)
+
         # date checkboxes
         self.ui.chkDateBeginFrom.toggled.connect(self.onChkDateBeginFromToggled)
         self.ui.chkDateBeginTo.toggled.connect(self.onChkDateBeginToToggled)
@@ -132,9 +149,14 @@ class MainWindow(QMainWindow):
         self.ui.dateEndTo.dateChanged.connect(self.onDateEndToChanged)
 
         # comboboxes
-        self.ui.comboUser.currentIndexChanged.connect(self.onComboUserCurrentIndexChanged)
-        self.ui.comboInit.currentIndexChanged.connect(self.onComboInitCurrentIndexChanged)
-        self.ui.comboProject.currentIndexChanged.connect(self.onComboProjectCurrentIndexChanged)
+        self.ui.comboUser.popupClosed.connect(self.onComboUserPopupClosed)
+        self.ui.comboInit.popupClosed.connect(self.onComboInitPopupClosed)
+        self.ui.comboProject.popupClosed.connect(self.onComboProjectPopupClosed)
+
+        # TODO: update filter on checkbox toggle?
+        # self.ui.comboUser.setModel(self._modelDomain.dicts[const.DICT_USER])
+        # self.ui.comboInit.setModel(self._modelDomain.dicts[const.DICT_INITIATOR])
+        # self.ui.comboProject.setModel(self._modelDomain.dicts[const.DICT_PROJECT])
 
         # additional checkboxes
         self.ui.chkActive.toggled.connect(self.onChkActiveToggled)
@@ -186,21 +208,22 @@ class MainWindow(QMainWindow):
         self.ui.tableTask.setColumnWidth(0, tdwidth * 0.04)
         self.ui.tableTask.setColumnWidth(1, tdwidth * 0.10)
         self.ui.tableTask.setColumnWidth(2, tdwidth * 0.07)
-        self.ui.tableTask.setColumnWidth(3, tdwidth * 0.42)
+        self.ui.tableTask.setColumnWidth(3, tdwidth * 0.45)  # + 0.04
         self.ui.tableTask.setColumnWidth(4, tdwidth * 0.08)
         self.ui.tableTask.setColumnWidth(5, tdwidth * 0.03)
         self.ui.tableTask.setColumnWidth(6, tdwidth * 0.06)
         self.ui.tableTask.setColumnWidth(7, tdwidth * 0.06)
         self.ui.tableTask.setColumnWidth(8, tdwidth * 0.06)
-        self.ui.tableTask.setColumnWidth(9, tdwidth * 0.03)
-        self.ui.tableTask.setColumnWidth(10, tdwidth * 0.02)
+        # self.ui.tableTask.setColumnWidth(9, tdwidth * 0.03)  # - 0.03
+        self.ui.tableTask.setColumnWidth(10, tdwidth * 0.01)  # - 0.01
         self.ui.tableTask.setColumnWidth(11, tdwidth * 0.03)
+        self.ui.tableTask.setColumnHidden(9, True)
 
     def setSearchFilter(self):
         # TODO bind to comboboxes
-        self._modelSearchProxy.filterUser = 0
-        self._modelSearchProxy.filterInit = 0
-        self._modelSearchProxy.filterProject = 0
+        self._modelSearchProxy.filterUser = self.ui.comboUser.currentData(const.RoleFilterData)
+        self._modelSearchProxy.filterInit = self.ui.comboInit.currentData(const.RoleFilterData)
+        self._modelSearchProxy.filterProject = self.ui.comboProject.currentData(const.RoleFilterData)
 
         self._modelSearchProxy.filterDateBeginFrom = datetime.datetime.strptime(self.ui.dateBeginFrom.date().toString(
             Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateBeginFrom.isChecked() else None
@@ -212,7 +235,7 @@ class MainWindow(QMainWindow):
             Qt.ISODate), "%Y-%m-%d").date() if self.ui.chkDateEndTo.isChecked() else None
 
         self._modelSearchProxy.filterActive = self.ui.chkActive.isChecked()
-        self._modelSearchProxy.filterNotActive = self.ui.chkActive.isChecked()
+        self._modelSearchProxy.filterNotActive = self.ui.chkNotActive.isChecked()
         self._modelSearchProxy.filterStrictDate = self.ui.chkStrict.isChecked()
         self._modelSearchProxy.filterHundredPercent = self.ui.chkHundredPercent.isChecked()
         self._modelSearchProxy.filterString = self.ui.editSearchFilter.text()
@@ -254,13 +277,13 @@ class MainWindow(QMainWindow):
     def onDateEndToChanged(self, date):
         self.setSearchFilter()
 
-    def onComboUserCurrentIndexChanged(self, index):
+    def onComboUserPopupClosed(self):
         self.setSearchFilter()
 
-    def onComboInitCurrentIndexChanged(self, index):
+    def onComboInitPopupClosed(self):
         self.setSearchFilter()
 
-    def onComboProjectCurrentIndexChanged(self, index):
+    def onComboProjectPopupClosed(self):
         self.setSearchFilter()
 
     def onChkActiveToggled(self, checked):
@@ -275,7 +298,8 @@ class MainWindow(QMainWindow):
     def onChkHundredPercentToggled(self, checked):
         self.setSearchFilter()
 
-
+    def onEditSearchFilterTextChanged(self, text):
+        self.setSearchFilter()
 
     def onTreeContractDoubleClicked(self, index):
         # if index.column() != 0:

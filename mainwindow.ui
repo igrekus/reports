@@ -164,7 +164,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_13">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <layout class="QHBoxLayout" name="hlayUser">
              <item>
               <widget class="QLabel" name="lblUser">
                <property name="text">
@@ -178,7 +178,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <layout class="QHBoxLayout" name="hlayInit">
              <item>
               <spacer name="horizontalSpacer_4">
                <property name="orientation">
@@ -208,7 +208,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_12">
+            <layout class="QHBoxLayout" name="hlayProject">
              <item>
               <spacer name="horizontalSpacer_3">
                <property name="orientation">
@@ -258,6 +258,13 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string> Показывать:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCheckBox" name="chkActive">
              <property name="text">
               <string>Актуальные</string>
@@ -272,12 +279,15 @@
              <property name="text">
               <string>Неактуальные</string>
              </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QCheckBox" name="chkStrict">
              <property name="text">
-              <string>Жесткий срок</string>
+              <string>Только жесткий срок</string>
              </property>
             </widget>
            </item>
@@ -285,6 +295,9 @@
             <widget class="QCheckBox" name="chkHundredPercent">
              <property name="text">
               <string>Готовые на 100%</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
