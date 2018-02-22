@@ -1,8 +1,9 @@
 import const
 from PyQt5.QtCore import QObject, QModelIndex
 from PyQt5.QtWidgets import QDialog, QMessageBox, QInputDialog, QLineEdit
+
+from dlgtaskdata import DlgTaskData
 from taskitem import TaskItem
-# from dlgcontractdata import DlgContractData
 # from dlgproductcatalog import DlgProductCatalog
 
 
@@ -19,93 +20,93 @@ class UiFacade(QObject):
     def initFacade(self):
         print("init ui facade")
 
-    def findDiffBetweenProductLists(self, old: list, new: list):
-        added = list()
-        changed = list()
-        deleted = list()
+    # def findDiffBetweenProductLists(self, old: list, new: list):
+    #     added = list()
+    #     changed = list()
+    #     deleted = list()
+    #
+    #     for n in new:
+    #         if n in old:
+    #             continue
+    #         elif any(o[0] == n[0] for o in old):
+    #             changed.append(n)
+    #         else:
+    #             added.append(n)
+    #
+    #     for o in old:
+    #         if not any(n[0] == o[0] for n in new):
+    #             deleted.append(o)
+    #
+    #     return added, changed, deleted
 
-        for n in new:
-            if n in old:
-                continue
-            elif any(o[0] == n[0] for o in old):
-                changed.append(n)
-            else:
-                added.append(n)
-
-        for o in old:
-            if not any(n[0] == o[0] for n in new):
-                deleted.append(o)
-
-        return added, changed, deleted
-
-    def requestContractAdd(self):
+    def requestTaskAdd(self):
         print("ui facade add contract request")
-        dialog = DlgContractData(domainModel=self._domainModel, uifacade=self, item=None,
-                                 products=None)  # empty dialog for a new item
+        dialog = DlgTaskData(domainModel=self._domainModel, uifacade=self, item=None)  # empty dialog for a new item
 
         if dialog.exec() != QDialog.Accepted:
             return
 
-        newItem, products = dialog.getData()
+        # newItem, products = dialog.getData()
+        #
+        # self._domainModel.addTaskItem(newItem, products)
 
-        self._domainModel.addContractItem(newItem, products)
+    def requestTaskEdit(self, index: QModelIndex):
+        item: TaskItem = self._domainModel.getItemByRow(index.row())
 
-    def requestContractEdit(self, index: QModelIndex):
-        item: ContractItem = self._domainModel.getItemById(index.data(const.RoleNodeId))
-        print("ui facade edit device request", item)
+        print("ui facade edit task request", item)
 
-        oldProducts = self._domainModel.contractDetailList[item.item_id]
+        try:
+            dialog = DlgTaskData(domainModel=self._domainModel, uifacade=self, item=item)
 
-        dialog = DlgContractData(domainModel=self._domainModel, uifacade=self, item=item,
-                                 products=oldProducts)
+            if dialog.exec() != QDialog.Accepted:
+                return
+        except Exception as ex:
+            print(ex)
 
-        if dialog.exec() != QDialog.Accepted:
-            return
+        # updatedItem, updatedProducts = dialog.getData()
+        #
+        # added, changed, deleted = self.findDiffBetweenProductLists(oldProducts, updatedProducts)
+        #
+        # self._domainModel.updateContractItem(updatedItem, updatedProducts, (added, changed, deleted))
 
-        updatedItem, updatedProducts = dialog.getData()
-
-        added, changed, deleted = self.findDiffBetweenProductLists(oldProducts, updatedProducts)
-
-        self._domainModel.updateContractItem(updatedItem, updatedProducts, (added, changed, deleted))
-
-    def requestContractDelete(self, index: QModelIndex):
-        item = self._domainModel.getItemById(index.data(const.RoleNodeId))
-        print("ui facade delete contract request", item)
-
-        result = QMessageBox.question(self.parent(), "Внимание!",
-                                      "Вы хотите удалить выбранную запись?")
-
-        if result != QMessageBox.Yes:
-            return
-
-        self._domainModel.deleteContractItem(item)
-
-    def requestClientAdd(self, caller):
-        print("ui facade add client request")
-
-        data, ok = QInputDialog.getText(caller, "Добавить нового клиента", "Введите название:", QLineEdit.Normal, "")
-
-        if not ok:
-            return
-
-        self._domainModel.addDictRecord(const.DICT_CLIENT, data)
-
-    def requestProductAdd(self, caller):
-        print("ui facade add new product request")
-
-        data, ok = QInputDialog.getText(caller, "Добавить новый прибор", "Введите наименование:", QLineEdit.Normal, "")
-
-        if not ok:
-            return
-
-        self._domainModel.addDictRecord(const.DICT_PRODUCT, data)
-
-    def requestCatalogOpen(self):
-        print("ui facade open catalog request")
-
-        dialog = DlgProductCatalog(domainModel=self._domainModel, uiFacade=self)
-
-        dialog.exec()
+    # def requestContractDelete(self, index: QModelIndex):
+    #     item = self._domainModel.getItemById(index.data(const.RoleNodeId))
+    #     print("ui facade delete contract request", item)
+    #
+    #     result = QMessageBox.question(self.parent(), "Внимание!",
+    #                                   "Вы хотите удалить выбранную запись?")
+    #
+    #     if result != QMessageBox.Yes:
+    #         return
+    #
+    #     self._domainModel.deleteContractItem(item)
+    #
+    # def requestClientAdd(self, caller):
+    #     print("ui facade add client request")
+    #
+    #     data, ok = QInputDialog.getText(caller, "Добавить нового клиента", "Введите название:", QLineEdit.Normal, "")
+    #
+    #     if not ok:
+    #         return
+    #
+    #     self._domainModel.addDictRecord(const.DICT_CLIENT, data)
+    #
+    # def requestProductAdd(self, caller):
+    #     print("ui facade add new product request")
+    #
+    #     data, ok = QInputDialog.getText(caller, "Добавить новый прибор", "Введите наименование:", QLineEdit.Normal, "")
+    #
+    #     if not ok:
+    #         return
+    #
+    #     self._domainModel.addDictRecord(const.DICT_PRODUCT, data)
+    #
+    # def requestCatalogOpen(self):
+    #     print("ui facade open catalog request")
+    #
+    #     dialog = DlgProductCatalog(domainModel=self._domainModel, uiFacade=self)
+    #
+    #     dialog.exec()
 
     # def requestExit(self, index):
     #     # TODO make settings class if needed, only current week is saved for now

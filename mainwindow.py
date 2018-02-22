@@ -3,7 +3,7 @@ import datetime
 from PyQt5 import uic
 from PyQt5.QtGui import QResizeEvent
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, QTableView, qApp
-from PyQt5.QtCore import Qt, QSortFilterProxyModel, QEvent, QDate
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QEvent, QDate, QModelIndex
 
 import const
 # from contractsearchproxymodel import ContractSearchProxyModel
@@ -45,22 +45,20 @@ class MainWindow(QMainWindow):
         # persistence engine
         self._persistenceEngine = MysqlEngine(parent=self, dbItemClass=TaskItem)
 
-        # facades
+        # persistence facade
         self._persistenceFacade = PersistenceFacade(parent=self, persistenceEngine=self._persistenceEngine)
-        # self._uiFacade = UiFacade(parent=self, reportManager=self._reportManager)
-        self._uiFacade = UiFacade(parent=self)
 
-        # models
-        # domain
+        # domain model
         self._modelDomain = DomainModel(parent=self, persistenceFacade=self._persistenceFacade)
 
-        # task table + search proxy
+        # connect ui facade to models
+        # self._uiFacade = UiFacade(parent=self, reportManager=self._reportManager)
+        self._uiFacade = UiFacade(parent=self, domainModel=self._modelDomain)
+
+        # main window models
         self._modelTaskTable = TaskModel(parent=self, domainModel=self._modelDomain)
         self._modelSearchProxy = TaskSearchProxyModel(parent=self)
         self._modelSearchProxy.setSourceModel(self._modelTaskTable)
-
-        # connect ui facade to models
-        # self._uiFacade.setDomainModel(self._modelDomain)
 
         # actions
         self.actRefresh = QAction("Обновить", self)
@@ -163,6 +161,10 @@ class MainWindow(QMainWindow):
         self.ui.chkNotActive.toggled.connect(self.onChkNotActiveToggled)
         self.ui.chkStrict.toggled.connect(self.onChkStrictToggled)
         self.ui.chkHundredPercent.toggled.connect(self.onChkHundredPercentToggled)
+
+        # table signals
+        self.ui.tableTask.doubleClicked.connect(self.onTableTaskDoubleClicked)
+        self.ui.tableTask.selectionModel().currentChanged.connect(self.onTableTaskCurrentChanged)
 
     def initActions(self):
         self.actRefresh.setShortcut("Ctrl+R")
@@ -301,9 +303,11 @@ class MainWindow(QMainWindow):
     def onEditSearchFilterTextChanged(self, text):
         self.setSearchFilter()
 
-    def onTreeContractDoubleClicked(self, index):
-        # if index.column() != 0:
+    def onTableTaskDoubleClicked(self, index):
         self.actTaskEdit.trigger()
+
+    def onTableTaskCurrentChanged(self, curr: QModelIndex, prev: QModelIndex):
+        self.ui.textNote.setPlainText(curr.data(const.RoleNote))
 
     # misc events
     def resizeEvent(self, event: QResizeEvent):
@@ -322,17 +326,15 @@ class MainWindow(QMainWindow):
         self.refreshView()
 
     def procActTaskAdd(self):
-        print("task add")
-        # self._uiFacade.requestContractAdd()
+        self._uiFacade.requestTaskAdd()
 
     def procActTaskEdit(self):
-        print("task edit")
-        # if not self.ui.treeContract.selectionModel().hasSelection():
-        #     QMessageBox.information(self, "Ошибка!", "Выберите запись о контракте для редактирования.")
-        #     return False
-        #
-        # selectedIndex = self.ui.treeContract.selectionModel().selectedIndexes()[0]
-        # self._uiFacade.requestContractEdit(self._modelSearchProxy.mapToSource(selectedIndex))
+        if not self.ui.tableTask.selectionModel().hasSelection():
+            QMessageBox.information(self, "Ошибка!", "Выберите запись о задаче для редактирования.")
+            return False
+
+        selectedIndex = self.ui.tableTask.selectionModel().selectedIndexes()[0]
+        self._uiFacade.requestTaskEdit(self._modelSearchProxy.mapToSource(selectedIndex))
 
     def procActTaskDelete(self):
         print("task delete")

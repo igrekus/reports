@@ -85,6 +85,12 @@ class CheckableMapModel(QAbstractListModel):
     def checkedCount(self):
         return sum(self.checkList)
 
+    def makeCheckable(self):
+        self.itemsCheckable = True
+
+    def makeUncheckable(self):
+        self.itemsCheckable = False
+
     def headerData(self, section, orientation, role=None):
         if orientation == Qt.Horizontal:
             return QVariant("Имя")

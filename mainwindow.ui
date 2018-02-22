@@ -339,6 +339,9 @@
     </item>
     <item>
      <widget class="QTableView" name="tableTask">
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>
       </property>
@@ -378,6 +381,25 @@
      </widget>
     </item>
     <item>
+     <widget class="QTextBrowser" name="textNote">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="tabStopWidth">
+       <number>80</number>
+      </property>
+      <property name="placeholderText">
+       <string>Примечания к задаче...</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <spacer name="horizontalSpacer">
@@ -395,7 +417,7 @@
       <item>
        <widget class="QPushButton" name="btnTaskAdd">
         <property name="text">
-         <string>Добавить</string>
+         <string>Добавить &amp;A</string>
         </property>
        </widget>
       </item>

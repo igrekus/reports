@@ -157,7 +157,7 @@ class TaskModel(QAbstractTableModel):
 
         elif role == Qt.CheckStateRole:
             if col == self.ColumnActive:
-                return QVariant((2 - item.item_active) * 2)
+                return QVariant(item.item_active)
 
         elif role == Qt.BackgroundRole:
             if item.item_percent == 100:
@@ -239,6 +239,9 @@ class TaskModel(QAbstractTableModel):
         elif role == const.RoleFilterData:
             return item.item_id, item.item_userId, item.item_initiatorId, item.item_projectId, item.item_dateBegin, \
                    item.item_dateEnd, item.item_active, item.item_strict, item.item_percent
+
+        elif role == const.RoleNote:
+            return item.item_note
 
         return QVariant()
 

@@ -27,3 +27,4 @@ RoleActive = RoleDateEnd + 1
 RoleStrict = RoleActive + 1
 RolePercent = RoleStrict + 1
 RoleFilterData = RolePercent + 1
+RoleNote = RoleFilterData + 1

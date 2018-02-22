@@ -77,10 +77,10 @@ class TaskSearchProxyModel(QSortFilterProxyModel):
         if not self.filterHundredPercent and item_percent == 100:
             return False
 
-        if not self.filterActive and 2 - item_active:
+        if not self.filterActive and item_active:
             return False
 
-        if not self.filterNotActive and not (2 - item_active):
+        if not self.filterNotActive and not item_active:
             return False
 
         if self._filterString and not rowMatchesString():
